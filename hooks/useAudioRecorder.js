@@ -1,45 +1,140 @@
 import { useState, useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { Platform, Alert, Linking } from 'react-native';
 import { Audio } from 'expo-av';
-import * as Permissions from 'expo-permissions';
 import * as Haptics from 'expo-haptics';
 import { generateWaveform } from '../services/databaseService';
 
 /**
- * Custom hook for handling audio recording functionality
+ * Custom hook for handling audio recording functionality with built-in permission handling
  * @returns {Object} Audio recording state and functions
  */
 const useAudioRecorder = () => {
+  // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [hasPermission, setHasPermission] = useState(false);
   const [recordingError, setRecordingError] = useState(null);
   const [isProcessingRecording, setIsProcessingRecording] = useState(false);
   
+  // Permission state
+  const [hasPermission, setHasPermission] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState('undetermined');
+  const [isCheckingPermission, setIsCheckingPermission] = useState(false);
+  
+  // References to active recording
   const recordingRef = useRef(null);
   const recordingTimerRef = useRef(null);
   
-  // Request microphone permissions on mount
+  // Check permissions on mount
   useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Permissions.askAsync(Permissions.AUDIO_RECORDING);
-        setHasPermission(status === 'granted');
-        if (status !== 'granted') {
-          setRecordingError('Microphone permission not granted');
-        }
-      } catch (error) {
-        console.error('Error requesting audio permissions:', error);
-        setRecordingError('Failed to request microphone permission');
-        setHasPermission(false);
-      }
-    })();
+    checkPermission();
     
     // Cleanup function
     return () => {
       stopRecording();
     };
   }, []);
+  
+  /**
+   * Check current audio recording permission status using Audio.requestPermissionsAsync
+   * @returns {Promise<boolean>} Whether permission is granted
+   */
+  const checkPermission = async () => {
+    try {
+      setIsCheckingPermission(true);
+      
+      // Using Audio.getPermissionsAsync() instead of Permissions.getAsync()
+      const { status, granted } = await Audio.getPermissionsAsync();
+      
+      setPermissionStatus(status);
+      setHasPermission(granted);
+      setIsCheckingPermission(false);
+      return granted;
+    } catch (error) {
+      console.error('Error checking audio permission:', error);
+      setIsCheckingPermission(false);
+      setPermissionStatus('undetermined');
+      setHasPermission(false);
+      return false;
+    }
+  };
+  
+  /**
+   * Request audio recording permission
+   * @returns {Promise<boolean>} Whether permission was granted
+   */
+  const requestPermission = async () => {
+    try {
+      setIsCheckingPermission(true);
+      
+      // If permission was previously denied, explain why we need it
+      if (permissionStatus === 'denied') {
+        Alert.alert(
+          "Microphone Permission Required",
+          "WaveChat needs access to your microphone to record audio messages. Without this permission, you won't be able to send voice messages.",
+          [
+            { 
+              text: "Cancel", 
+              style: "cancel"
+            },
+            { 
+              text: "Open Settings", 
+              onPress: () => Linking.openSettings() 
+            }
+          ]
+        );
+        setIsCheckingPermission(false);
+        return false;
+      }
+      
+      // Using Audio.requestPermissionsAsync() instead of Permissions.askAsync()
+      const { status, granted } = await Audio.requestPermissionsAsync();
+      
+      setPermissionStatus(status);
+      setHasPermission(granted);
+      
+      // If denied, explain why we need it
+      if (!granted) {
+        Alert.alert(
+          "Permission Denied",
+          "WaveChat cannot record audio messages without microphone access. You can enable this in your device settings.",
+          [
+            { 
+              text: "OK", 
+              style: "cancel" 
+            },
+            { 
+              text: "Open Settings", 
+              onPress: () => Linking.openSettings() 
+            }
+          ]
+        );
+      }
+      
+      setIsCheckingPermission(false);
+      return granted;
+    } catch (error) {
+      console.error('Error requesting audio permission:', error);
+      setIsCheckingPermission(false);
+      return false;
+    }
+  };
+  
+  /**
+   * Ensure we have permission before starting recording
+   * @returns {Promise<boolean>} Success status
+   */
+  const ensurePermission = async () => {
+    // First check current status
+    const hasCurrentPermission = await checkPermission();
+    
+    // If already granted, return true
+    if (hasCurrentPermission) {
+      return true;
+    }
+    
+    // Otherwise request permission
+    return await requestPermission();
+  };
   
   /**
    * Start audio recording
@@ -49,7 +144,9 @@ const useAudioRecorder = () => {
     try {
       setRecordingError(null);
       
-      if (!hasPermission) {
+      // Ensure we have permission
+      const hasRecordingPermission = await ensurePermission();
+      if (!hasRecordingPermission) {
         setRecordingError('Microphone permission not granted');
         return false;
       }
@@ -57,12 +154,18 @@ const useAudioRecorder = () => {
       // Reset recording state
       setRecordingTime(0);
       
-      // Configure audio recording settings
+      // Configure audio recording settings with correct values
+      // Using enum values directly to avoid potential issues
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
-        interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
+        // Fix for iOS interruption mode
+        // interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_MIX_WITH_OTHERS,
+        // Fix for Android interruption mode
+        // interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
       });
       
       // Prepare and start recording
@@ -70,16 +173,9 @@ const useAudioRecorder = () => {
       
       // Configure recording options based on platform
       const recordingOptions = Platform.OS === 'ios' 
-        ? Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-        : {
-            android: {
-              extension: '.m4a',
-              outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-              audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-              sampleRate: 44100,
-              numberOfChannels: 2,
-              bitRate: 128000,
-            },
+        ? {
+            isMeteringEnabled: true,
+            android: {},
             ios: {
               extension: '.m4a',
               audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
@@ -90,6 +186,17 @@ const useAudioRecorder = () => {
               linearPCMIsBigEndian: false,
               linearPCMIsFloat: false,
             },
+          }
+        : {
+            android: {
+              extension: '.m4a',
+              outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+              audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+              sampleRate: 44100,
+              numberOfChannels: 2,
+              bitRate: 128000,
+            },
+            ios: {},
           };
       
       await recording.prepareToRecordAsync(recordingOptions);
@@ -204,11 +311,20 @@ const useAudioRecorder = () => {
   };
   
   return {
+    // Recording state
     isRecording,
     recordingTime,
-    hasPermission,
     recordingError,
     isProcessingRecording,
+    
+    // Permission state
+    hasPermission,
+    permissionStatus,
+    isCheckingPermission,
+    
+    // Functions
+    checkPermission,
+    requestPermission,
     startRecording,
     stopRecording,
     cancelRecording,

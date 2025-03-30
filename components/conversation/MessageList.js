@@ -10,6 +10,7 @@ import MessageItem from './MessageItem';  // Import the wrapper component
 import DateSeparator from './DateSeparator';
 import EmptyState from '../common/EmptyState';
 import { groupMessagesByDate } from '../../utils/timeUtils';
+
 /**
  * MessageList component for displaying conversation messages
  * 
@@ -39,6 +40,7 @@ const MessageList = ({
   const [contentSize, setContentSize] = useState(0);
   const [layoutHeight, setLayoutHeight] = useState(0);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [expandedMessageId, setExpandedMessageId] = useState(null);
   
   // Process messages to add date separators
   const processedMessages = useMemo(() => {
@@ -73,8 +75,31 @@ const MessageList = ({
     setLayoutHeight(nativeEvent.layout.height);
   }, []);
   
+  // Custom message press handler that captures message expansion
+  const handleMessagePress = useCallback((message) => {
+    // Track which message is expanded so we can adjust scroll if needed
+    setExpandedMessageId(message.id);
+    
+    // Call the original handler
+    if (onMessagePress) {
+      onMessagePress(message);
+    }
+    
+    // If message is near the bottom, scroll up to make room for expanded view
+    if (listRef.current) {
+      // Wait for expanded view to render
+      setTimeout(() => {
+        listRef.current.scrollToIndex({
+          index: processedMessages.findIndex(m => m.id === message.id),
+          viewPosition: 0.3, // Position item 30% from the top
+          animated: true
+        });
+      }, 150);
+    }
+  }, [onMessagePress, processedMessages]);
+  
   // Render a message item based on its type
-const renderItem = useCallback(({ item }) => {
+  const renderItem = useCallback(({ item, index }) => {
     // If this item has a date separator flag, render the separator
     const separator = item.showDateSeparator ? (
       <DateSeparator date={item.dateString} />
@@ -91,7 +116,7 @@ const renderItem = useCallback(({ item }) => {
         onLongPress={onMessageLongPress}
         onPressOptions={onMessageOptions}
         onTagPress={onTagPress}
-        onPress={onMessagePress}
+        onPress={handleMessagePress}
       />
     );
     
@@ -102,7 +127,7 @@ const renderItem = useCallback(({ item }) => {
         {messageComponent}
       </View>
     );
-  }, [currentUserId, onMessageLongPress, onMessageOptions, onTagPress, onMessagePress]);
+  }, [currentUserId, onMessageLongPress, onMessageOptions, onTagPress, handleMessagePress]);
 
   // Item key extractor for FlatList
   const keyExtractor = useCallback((item) => item.id, []);
@@ -158,6 +183,7 @@ const renderItem = useCallback(({ item }) => {
       // Enhanced accessibility
       accessibilityLabel="Message list"
       accessibilityHint="Scroll to view conversation messages"
+      className="message-list-scrollview" // Used to find this element for scrolling
     />
   );
 };

@@ -153,7 +153,7 @@ const AudioRecorder = ({ onRecordingComplete, onRecordingCancel }) => {
       : '#5A67F2'; // Purple for normal state
   
   return (
-    <View style={styles.container}>
+    <View style={styles.container} className="audio-recorder-component">
       {isRecording && (
         <Animated.View 
           style={[

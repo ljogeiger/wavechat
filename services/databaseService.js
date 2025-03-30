@@ -707,3 +707,259 @@ const fixMessageTypes = async () => {
     console.error('Error fixing message types:', error);
   }
 };
+
+// New functions to add to databaseService.js
+
+// Get transcript for a message
+export const getMessageTranscript = async (messageId) => {
+  try {
+    // Simulate network delay
+    await delay(300);
+    
+    // In a real app, this would fetch from a database or API
+    // For demo purposes, we'll return mock data based on message ID
+    
+    // Check if we have a canned response for this message ID
+    if (mockTranscripts[messageId]) {
+      return mockTranscripts[messageId];
+    }
+    
+    // Otherwise, generate a random transcript
+    const segmentCount = 4 + Math.floor(Math.random() * 4); // 4-7 segments
+    const segments = [];
+    
+    let currentTime = 0;
+    for (let i = 0; i < segmentCount; i++) {
+      const segmentLength = 1 + Math.floor(Math.random() * 3); // 1-3 seconds
+      const endTime = currentTime + segmentLength;
+      
+      segments.push({
+        text: getRandomTranscriptSegment(),
+        start: currentTime,
+        end: endTime
+      });
+      
+      currentTime = endTime + 0.2; // Small gap between segments
+    }
+    
+    const transcript = {
+      text: segments.map(s => s.text).join(' '),
+      segments
+    };
+    
+    return transcript;
+  } catch (error) {
+    console.error('Error getting message transcript:', error);
+    throw error;
+  }
+};
+
+// Helper function to generate random transcript segments
+const getRandomTranscriptSegment = () => {
+  const segments = [
+    "I wanted to discuss the project timeline.",
+    "Let's review the main goals for this quarter.",
+    "I think we should focus on user acquisition first.",
+    "The latest design looks great, but I have a few suggestions.",
+    "Can we schedule a follow-up meeting next week?",
+    "I'm not sure if we have enough resources for this feature.",
+    "The analytics show promising results from our last campaign.",
+    "We need to address the performance issues before launch.",
+    "I'll send you the updated documentation later today.",
+    "Thanks for your help with this, I really appreciate it.",
+    "Let me know if you have any questions about the implementation.",
+    "I want to highlight a key issue with the current approach.",
+    "We should consider alternative solutions for this problem.",
+    "The client feedback has been very positive so far.",
+    "I'll need your input on the marketing strategy."
+  ];
+  
+  return segments[Math.floor(Math.random() * segments.length)];
+};
+
+// Mock transcripts for specific message IDs
+const mockTranscripts = {
+  "103": {
+    text: "I have a question about the task assignments. Can you clarify who's responsible for the UI components? I think there might be some overlap with what Alex is working on.",
+    segments: [
+      { text: "I have a question about the task assignments.", start: 0, end: 2.5 },
+      { text: "Can you clarify who's responsible for the UI components?", start: 2.7, end: 5.2 },
+      { text: "I think there might be some overlap with what Alex is working on.", start: 5.5, end: 8.0 }
+    ]
+  },
+  "106": {
+    text: "I've made good progress on the dashboard component. All the charts are implemented and I'm now working on the filter functionality. Should be ready for review by tomorrow afternoon.",
+    segments: [
+      { text: "I've made good progress on the dashboard component.", start: 0, end: 2.8 },
+      { text: "All the charts are implemented and I'm now working on the filter functionality.", start: 3.0, end: 7.5 },
+      { text: "Should be ready for review by tomorrow afternoon.", start: 7.8, end: 10.5 }
+    ]
+  },
+  "202": {
+    text: "Yes, I'm prepared for the presentation tomorrow. I've reviewed all the slides and practiced the key talking points. I have a couple of questions about the demo section though. Should we include the new feature that's still in beta? Also, do you want to handle the Q&A or should I?",
+    segments: [
+      { text: "Yes, I'm prepared for the presentation tomorrow.", start: 0, end: 3.2 },
+      { text: "I've reviewed all the slides and practiced the key talking points.", start: 3.5, end: 7.8 },
+      { text: "I have a couple of questions about the demo section though.", start: 8.0, end: 11.5 },
+      { text: "Should we include the new feature that's still in beta?", start: 11.8, end: 15.2 },
+      { text: "Also, do you want to handle the Q&A or should I?", start: 15.5, end: 19.0 }
+    ]
+  },
+  "303": {
+    text: "I'm encountering some issues with the API integration. The endpoint returns an unexpected data format and I'm getting parsing errors. I've tried different approaches but nothing seems to work consistently. Could you check if the API documentation is up to date?",
+    segments: [
+      { text: "I'm encountering some issues with the API integration.", start: 0, end: 3.5 },
+      { text: "The endpoint returns an unexpected data format and I'm getting parsing errors.", start: 3.8, end: 8.2 },
+      { text: "I've tried different approaches but nothing seems to work consistently.", start: 8.5, end: 12.8 },
+      { text: "Could you check if the API documentation is up to date?", start: 13.0, end: 16.5 }
+    ]
+  },
+  "305": {
+    text: "I found the solution to your API problem. The endpoint was recently updated and requires an additional authentication header. You need to include the project ID in the X-Project-Id header. I've updated the documentation to reflect this change. Let me know if you still have issues after making this change.",
+    segments: [
+      { text: "I found the solution to your API problem.", start: 0, end: 2.5 },
+      { text: "The endpoint was recently updated and requires an additional authentication header.", start: 2.8, end: 6.5 },
+      { text: "You need to include the project ID in the X-Project-Id header.", start: 6.8, end: 9.5 },
+      { text: "I've updated the documentation to reflect this change.", start: 9.8, end: 12.2 },
+      { text: "Let me know if you still have issues after making this change.", start: 12.5, end: 15.0 }
+    ]
+  }
+};
+
+// Add more reactions to the existing ones
+export const addMoreMockReactions = async () => {
+  // More detailed mock reactions for messages
+  const additionalReactions = {
+    "103": [
+      { 
+        id: "react_101",
+        emoji: "❓",
+        timestamp: 3.5, // 3.5 seconds into the audio
+        username: "Sarah Johnson",
+        userId: "456",
+        createdAt: new Date(Date.now() - 75 * 60000).toISOString()
+      },
+      {
+        id: "react_102",
+        emoji: "📝",
+        timestamp: 7.0, // 7.0 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 72 * 60000).toISOString()
+      },
+    ],
+    "106": [
+      { 
+        id: "react_103",
+        emoji: "👍",
+        timestamp: 2.5, // 2.5 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 34 * 60000).toISOString()
+      },
+      {
+        id: "react_104",
+        emoji: "🎉",
+        timestamp: 8.2, // 8.2 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 33 * 60000).toISOString()
+      },
+    ],
+    "202": [
+      { 
+        id: "react_105",
+        emoji: "👆",
+        timestamp: 12.5, // 12.5 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 28.5 * 3600000).toISOString()
+      },
+      {
+        id: "react_106",
+        emoji: "🤔",
+        timestamp: 15.8, // 15.8 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 28.2 * 3600000).toISOString()
+      },
+    ],
+    "303": [
+      { 
+        id: "react_107",
+        emoji: "⚠️",
+        timestamp: 4.2, // 4.2 seconds into the audio
+        username: "Jessica Williams",
+        userId: "321",
+        createdAt: new Date(Date.now() - 3 * 86400000 + 38 * 60000).toISOString()
+      },
+      {
+        id: "react_108",
+        emoji: "❓",
+        timestamp: 13.5, // 13.5 seconds into the audio
+        username: "Jessica Williams",
+        userId: "321",
+        createdAt: new Date(Date.now() - 3 * 86400000 + 37 * 60000).toISOString()
+      },
+    ],
+    "305": [
+      { 
+        id: "react_109",
+        emoji: "🔍",
+        timestamp: 2.3, // 2.3 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 0.9 * 86400000).toISOString()
+      },
+      {
+        id: "react_110",
+        emoji: "💡",
+        timestamp: 7.0, // 7.0 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 0.8 * 86400000).toISOString()
+      },
+      {
+        id: "react_111",
+        emoji: "👍",
+        timestamp: 13.2, // 13.2 seconds into the audio
+        username: "You",
+        userId: "123",
+        createdAt: new Date(Date.now() - 0.75 * 86400000).toISOString()
+      },
+    ],
+  };
+  
+  try {
+    // Get existing reactions
+    const reactionsJson = await AsyncStorage.getItem(REACTIONS_STORAGE_KEY);
+    const allReactions = JSON.parse(reactionsJson) || {};
+    
+    // Merge existing with additional reactions
+    for (const messageId in additionalReactions) {
+      if (!allReactions[messageId]) {
+        allReactions[messageId] = [];
+      }
+      
+      // Add additional reactions if they don't already exist
+      additionalReactions[messageId].forEach(reaction => {
+        const exists = allReactions[messageId].some(r => r.id === reaction.id);
+        if (!exists) {
+          allReactions[messageId].push(reaction);
+        }
+      });
+    }
+    
+    // Save the updated reactions
+    await AsyncStorage.setItem(REACTIONS_STORAGE_KEY, JSON.stringify(allReactions));
+    
+    console.log('Added additional mock reactions');
+    return true;
+  } catch (error) {
+    console.error('Error adding mock reactions:', error);
+    return false;
+  }
+};
+
+// Initialize the additional reactions when the app loads
+addMoreMockReactions();

@@ -18,12 +18,14 @@ import { formatMessageTime } from '../../utils/timeUtils';
  * @param {boolean} props.isUserMessage - Whether the message is from the current user
  * @param {Function} props.onLongPress - Callback when message is long-pressed
  * @param {Function} props.onPressOptions - Callback when options button is pressed
+ * @param {Function} props.onPress - Callback when message is pressed
  */
 const TextMessageItem = ({
   message,
   isUserMessage,
   onLongPress,
   onPressOptions,
+  onPress,
 }) => {
   // Handle long press with haptic feedback
   const handleLongPress = useCallback(() => {
@@ -33,9 +35,17 @@ const TextMessageItem = ({
     }
   }, [message, onLongPress]);
 
+  // Handle press on the message
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress(message);
+    }
+  }, [message, onPress]);
+
   return (
     <Pressable
       onLongPress={handleLongPress}
+      onPress={handlePress}
       delayLongPress={300}
       style={({ pressed }) => [
         styles.container,
@@ -43,7 +53,7 @@ const TextMessageItem = ({
         pressed && styles.pressedContainer,
       ]}
       accessibilityLabel={`Text message from ${message.senderName}: ${message.text}`}
-      accessibilityHint="Long press for more options."
+      accessibilityHint="Tap to view details. Long press for more options."
     >
       {/* Message header */}
       <View style={styles.header}>

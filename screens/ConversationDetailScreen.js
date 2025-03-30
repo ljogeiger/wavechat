@@ -200,10 +200,19 @@ const ConversationDetailScreen = () => {
     }
   }, []);
   
-  // Navigate to message detail screen
+  // Handle message detail
   const handleNavigateToDetail = useCallback((message) => {
-    navigation.navigate('MessageDetail', { message });
-  }, [navigation]);
+    // Instead of navigating to a separate screen, we'll use our ExpandedMessageView
+    // This is handled directly in the MessageItem component
+    console.log('Message detail requested for:', message.id);
+    
+    // Show a message to the user about the feature
+    Alert.alert(
+      'Message Detail',
+      'You can view message details by tapping on any message. This will show an expanded view with transcript, tags, and reactions.',
+      [{ text: 'OK' }]
+    );
+  }, []);
   
   // Handle message tag press
   const handleTagPress = useCallback((tag, messageId) => {
@@ -213,11 +222,13 @@ const ConversationDetailScreen = () => {
   
   // Handle message press
   const handleMessagePress = useCallback((message) => {
-    if (message.type === 'audio') {
-      // For audio messages, navigate to detail view
-      handleNavigateToDetail(message);
-    }
-  }, [handleNavigateToDetail]);
+    // The MessageItem component will handle showing the expanded view
+    // We just log here for debugging purposes
+    console.log('Message pressed:', message.id);
+    
+    // Note: Do not try to navigate to MessageDetail as it's not set up in the navigation
+    // Instead, we're using our own ExpandedMessageView component
+  }, []);
   
   return (
     <SafeAreaView style={styles.safeArea}>

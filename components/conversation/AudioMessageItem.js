@@ -46,9 +46,20 @@ const AudioMessageItem = ({
     }
   }, [message.id, onTagPress]);
 
+  // Handle press on the message bubble
+  const handlePress = useCallback(() => {
+    console.log('AudioMessageItem - handlePress called for message ID:', message.id);
+    if (onPress) {
+      console.log('AudioMessageItem - calling parent onPress callback');
+      onPress(message);
+    } else {
+      console.log('AudioMessageItem - No parent onPress provided');
+    }
+  }, [message, onPress]);
+
   return (
     <Pressable
-      onPress={onPress ? () => onPress(message) : undefined}
+      onPress={handlePress}
       onLongPress={handleLongPress}
       delayLongPress={300}
       style={({ pressed }) => [
@@ -57,7 +68,7 @@ const AudioMessageItem = ({
         pressed && styles.pressedContainer,
       ]}
       accessibilityLabel={`Audio message from ${message.senderName}, duration ${message.audioDuration} seconds`}
-      accessibilityHint="Double tap to play. Long press for more options."
+      accessibilityHint="Tap to expand. Long press for more options."
     >
       {/* Message header */}
       <View style={styles.header}>
@@ -73,11 +84,13 @@ const AudioMessageItem = ({
       </View>
 
       {/* Audio player */}
-      <AudioPlayer
-        message={message}
-        isUserMessage={isUserMessage}
-        style={styles.audioPlayer}
-      />
+      <View style={styles.audioPlayerWrapper} pointerEvents="none">
+        <AudioPlayer
+          message={message}
+          isUserMessage={isUserMessage}
+          style={styles.audioPlayer}
+        />
+      </View>
 
       {/* Tags */}
       {message.tags && message.tags.length > 0 && (
@@ -105,6 +118,21 @@ const AudioMessageItem = ({
           color={isUserMessage ? "rgba(255, 255, 255, 0.8)" : "#666"}
         />
       </TouchableOpacity>
+      
+      {/* Tap to expand indicator */}
+      <View style={styles.expandIndicator}>
+        <Ionicons
+          name="expand-outline"
+          size={12}
+          color={isUserMessage ? "rgba(255, 255, 255, 0.6)" : "#999"}
+        />
+        <Text style={[
+          styles.expandText,
+          isUserMessage ? styles.userExpandText : styles.otherExpandText
+        ]}>
+          Tap to expand
+        </Text>
+      </View>
     </Pressable>
   );
 };
@@ -158,6 +186,9 @@ const styles = StyleSheet.create({
   otherTimestamp: {
     color: '#999',
   },
+  audioPlayerWrapper: {
+    width: '100%',
+  },
   audioPlayer: {
     marginVertical: 4,
   },
@@ -170,6 +201,23 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     padding: 4,
     marginTop: 4,
+  },
+  expandIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 8,
+    opacity: 0.6,
+  },
+  expandText: {
+    fontSize: 11,
+    marginLeft: 4,
+  },
+  userExpandText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  otherExpandText: {
+    color: '#999',
   },
 });
 

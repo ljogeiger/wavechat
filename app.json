@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true, 
+      "infoPlist": {
+              "NSMicrophoneUsageDescription": "This app needs access to your microphone to record audio."
+            }
     },
     "android": {
       "adaptiveIcon": {
@@ -32,6 +35,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ], 
+      [
+        "expo-av",
+              {
+                "microphonePermission": "Allow Wave Chat to access your microphone"
+              }
       ]
     ],
     "experiments": {
