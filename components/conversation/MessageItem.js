@@ -1,7 +1,8 @@
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useState, useCallback, useRef } from 'react';
 import AudioMessageItem from './AudioMessageItem';
 import TextMessageItem from './TextMessageItem';
 import ExpandedMessageView from './ExpandedMessageView';
+import { View } from 'react-native';
 
 /**
  * MessageItem component - Smart wrapper that renders the appropriate message type
@@ -23,6 +24,7 @@ const MessageItem = ({
   onPress,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const messageRef = useRef(null);
   
   // Handle tap on the message - this is our local handler 
   const handleLocalPress = useCallback(() => {
@@ -66,12 +68,15 @@ const MessageItem = ({
   
   return (
     <>
-      {renderMessageContent()}
+      <View ref={messageRef}>
+        {renderMessageContent()}
+      </View>
       
       <ExpandedMessageView
         message={message}
         visible={expanded}
         onClose={handleCloseExpanded}
+        messageRef={messageRef}
       />
     </>
   );

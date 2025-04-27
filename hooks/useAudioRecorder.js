@@ -151,18 +151,23 @@ const useAudioRecorder = () => {
         return false;
       }
       
+      // Clean up any existing recording
+      if (recordingRef.current) {
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch (error) {
+          console.log('Error cleaning up existing recording:', error);
+        }
+        recordingRef.current = null;
+      }
+      
       // Reset recording state
       setRecordingTime(0);
       
       // Configure audio recording settings with correct values
-      // Using enum values directly to avoid potential issues
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
-        // Fix for iOS interruption mode
-        // interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_MIX_WITH_OTHERS,
-        // Fix for Android interruption mode
-        // interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
         staysActiveInBackground: false,
@@ -172,32 +177,27 @@ const useAudioRecorder = () => {
       const recording = new Audio.Recording();
       
       // Configure recording options based on platform
-      const recordingOptions = Platform.OS === 'ios' 
-        ? {
-            isMeteringEnabled: true,
-            android: {},
-            ios: {
-              extension: '.m4a',
-              audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
-              sampleRate: 44100,
-              numberOfChannels: 2,
-              bitRate: 128000,
-              linearPCMBitDepth: 16,
-              linearPCMIsBigEndian: false,
-              linearPCMIsFloat: false,
-            },
-          }
-        : {
-            android: {
-              extension: '.m4a',
-              outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-              audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-              sampleRate: 44100,
-              numberOfChannels: 2,
-              bitRate: 128000,
-            },
-            ios: {},
-          };
+      const recordingOptions = {
+        isMeteringEnabled: true,
+        ios: {
+          extension: '.m4a',
+          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        }
+      };
       
       await recording.prepareToRecordAsync(recordingOptions);
       await recording.startAsync();
@@ -249,6 +249,7 @@ const useAudioRecorder = () => {
       
       // Reset state
       const duration = recordingTime;
+      const recording = recordingRef.current;
       recordingRef.current = null;
       recordingTimerRef.current = null;
       setIsRecording(false);
@@ -268,6 +269,13 @@ const useAudioRecorder = () => {
       setRecordingError(`Failed to process recording: ${error.message}`);
       
       // Reset state
+      if (recordingRef.current) {
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch (cleanupError) {
+          console.error('Error cleaning up recording:', cleanupError);
+        }
+      }
       recordingRef.current = null;
       clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = null;

@@ -8,6 +8,8 @@ import {
   Dimensions,
   ScrollView,
   Platform,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,19 +35,14 @@ const ExpandedMessageView = ({ message, onClose, visible = false }) => {
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  
-  console.log('ExpandedMessageView - Rendered with visible:', visible);
+  const slideAnim = useRef(new Animated.Value(height)).current;
   
   // Handle animations when visibility changes
   useEffect(() => {
-    console.log('ExpandedMessageView - Effect triggered with visible:', visible);
     if (visible && message) {
-      console.log('ExpandedMessageView - Starting animations');
-      
-      // Reset animation values to initial state
+      // Reset animation values
       fadeAnim.setValue(0);
-      scaleAnim.setValue(0.8);
+      slideAnim.setValue(height);
       
       // Start animations
       Animated.parallel([
@@ -54,17 +51,14 @@ const ExpandedMessageView = ({ message, onClose, visible = false }) => {
           duration: 300,
           useNativeDriver: Platform.OS !== 'web',
         }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
+        Animated.spring(slideAnim, {
+          toValue: 0,
           friction: 8,
           tension: 40,
           useNativeDriver: Platform.OS !== 'web',
         }),
-      ]).start(({ finished }) => {
-        console.log('ExpandedMessageView - Animation finished:', finished);
-      });
+      ]).start();
       
-      // Load data
       loadMessageData();
     }
   }, [visible, message]);
@@ -97,21 +91,18 @@ const ExpandedMessageView = ({ message, onClose, visible = false }) => {
   
   // Handle close with animation
   const handleClose = () => {
-    console.log('ExpandedMessageView - handleClose called');
-    
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 250,
         useNativeDriver: Platform.OS !== 'web',
       }),
-      Animated.timing(scaleAnim, {
-        toValue: 0.8,
+      Animated.timing(slideAnim, {
+        toValue: height,
         duration: 250,
         useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start(({ finished }) => {
-      console.log('ExpandedMessageView - Close animation finished:', finished);
       if (finished) {
         onClose();
       }
@@ -120,52 +111,48 @@ const ExpandedMessageView = ({ message, onClose, visible = false }) => {
   
   // If not visible or no message, don't render anything
   if (!visible || !message) {
-    console.log('ExpandedMessageView - Not rendering: visible=', visible, ', message=', !!message);
     return null;
   }
   
-  console.log('ExpandedMessageView - Rendering visible view for message ID:', message.id);
   const isAudioMessage = message.type === 'audio';
   
   return (
-    <View style={styles.overlayContainer}>
-      <Animated.View 
-        style={[
-          styles.overlay,
-          { 
-            opacity: fadeAnim,
-          }
-        ]}
-      >
-        <BlurView intensity={15} style={styles.blurContainer}>
-          <TouchableOpacity 
-            style={styles.backdrop} 
-            activeOpacity={1} 
-            onPress={handleClose}
-          />
-          
-          <Animated.View 
-            style={[
-              styles.container,
-              {
-                transform: [{ scale: scaleAnim }],
-                marginBottom: 120, // Fixed bottom margin for audio recorder
-              }
-            ]}
-          >
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="none"
+      onRequestClose={handleClose}
+    >
+      <View style={styles.modalContainer}>
+        <Animated.View 
+          style={[
+            styles.modalContent,
+            {
+              transform: [{ translateY: slideAnim }],
+            }
+          ]}
+        >
+          <SafeAreaView style={styles.safeArea}>
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerInfo}>
                 <Text style={styles.senderName}>{message.senderName}</Text>
                 <Text style={styles.timestamp}>{formatMessageTime(message.timestamp)}</Text>
               </View>
-              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+              <TouchableOpacity 
+                onPress={handleClose} 
+                style={styles.closeButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
             
             {/* Message Content */}
-            <ScrollView style={styles.contentScroll}>
+            <ScrollView 
+              style={styles.contentScroll}
+              contentContainerStyle={styles.contentContainer}
+            >
               {/* Audio Player (for audio messages) */}
               {isAudioMessage && (
                 <View style={styles.audioPlayerContainer}>
@@ -229,10 +216,10 @@ const ExpandedMessageView = ({ message, onClose, visible = false }) => {
                 </View>
               )}
             </ScrollView>
-          </Animated.View>
-        </BlurView>
-      </Animated.View>
-    </View>
+          </SafeAreaView>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 };
 
@@ -244,44 +231,26 @@ const formatTime = (seconds) => {
 };
 
 const styles = StyleSheet.create({
-  overlayContainer: {
-    ...StyleSheet.absoluteFillObject,
-    position: 'absolute',
-    zIndex: 1000,
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 120, // Space for the audio recorder
-  },
-  blurContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  container: {
-    width: width * 0.9,
+  modalContent: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    position: 'absolute',
-    top: 120, // Position at the top with some padding
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
+    paddingTop: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
@@ -302,7 +271,10 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   contentScroll: {
-    maxHeight: height * 0.6,
+    flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16, // Add extra padding for iOS home indicator
   },
   audioPlayerContainer: {
     padding: 16,
