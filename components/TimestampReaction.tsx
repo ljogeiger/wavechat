@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { formatTime } from '../utils/audioUtils';
 
 interface Reaction {
@@ -19,17 +19,14 @@ const TimestampReaction: React.FC<TimestampReactionProps> = ({ reaction, duratio
   const position = (reaction.timestamp / duration) * 100;
 
   return (
-    <TouchableOpacity 
-      style={[styles.container, { left: `${position}%` }]} 
+    <TouchableOpacity
+      style={[styles.container, { left: `${position}%` }]}
       onPress={onPress}
     >
       <View style={styles.emojiContainer}>
         <Text style={styles.emoji}>{reaction.emoji}</Text>
       </View>
-      <View style={styles.tooltip}>
-        <Text style={styles.timestamp}>{formatTime(reaction.timestamp)}</Text>
-        <Text style={styles.username}>{reaction.username}</Text>
-      </View>
+      <Text style={styles.username}>{reaction.username}</Text>
     </TouchableOpacity>
   );
 };
@@ -37,48 +34,25 @@ const TimestampReaction: React.FC<TimestampReactionProps> = ({ reaction, duratio
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    transform: [{ translateX: -15 }], // Center the emoji
+    alignItems: 'center',
+    transform: [{ translateX: -20 }],
   },
   emojiContainer: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 12,
+    padding: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   emoji: {
     fontSize: 16,
   },
-  tooltip: {
-    position: 'absolute',
-    top: 35,
-    left: -50,
-    width: 100,
-    backgroundColor: '#FFFFFF',
-    padding: 8,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
   username: {
-    fontSize: 12,
-    color: '#333',
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: 10,
+    color: '#666',
     marginTop: 2,
   },
 });
