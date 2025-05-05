@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions, ViewStyle } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   withTiming, 
@@ -8,21 +8,19 @@ import Animated, {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-/**
- * Audio waveform visualization component
- * 
- * @param {Object} props
- * @param {Array} props.waveform - Array of amplitude values (0-1)
- * @param {boolean} props.isPlaying - Whether the audio is currently playing
- * @param {number} props.playbackPosition - Current playback position (0-1)
- * @param {boolean} props.isUserMessage - Whether the message is from the current user
- * @param {Object} props.style - Additional style for the container
- * @param {number} props.barWidth - Width of each waveform bar (default: 2)
- * @param {number} props.barGap - Gap between bars (default: 1)
- * @param {number} props.minBarHeight - Minimum height of bars (default: 3)
- * @param {number} props.maxBarHeight - Maximum height of bars (default: 30)
- */
-const WaveformVisualizer = ({ 
+interface WaveformVisualizerProps {
+  waveform: number[];
+  isPlaying: boolean;
+  playbackPosition: number;
+  isUserMessage: boolean;
+  style?: ViewStyle;
+  barWidth?: number;
+  barGap?: number;
+  minBarHeight?: number;
+  maxBarHeight?: number;
+}
+
+const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({ 
   waveform = [], 
   isPlaying = false,
   playbackPosition = 0,
@@ -119,4 +117,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(WaveformVisualizer);
+export default React.memo(WaveformVisualizer); 

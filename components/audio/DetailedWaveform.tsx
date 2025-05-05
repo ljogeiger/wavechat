@@ -5,27 +5,26 @@ import {
   TouchableWithoutFeedback, 
   PanResponder,
   Dimensions,
-  Text
+  Text,
+  GestureResponderEvent
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { formatTime } from '../../utils/timeUtils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-/**
- * Detailed waveform visualization component with interactive features
- * 
- * @param {Object} props
- * @param {Array} props.waveform - Array of amplitude values (0-1)
- * @param {number} props.playbackPosition - Current playback position (0-1)
- * @param {Function} props.onPress - Function to call when a position is tapped
- * @param {Function} props.onLongPress - Function to call when a position is long-pressed
- * @param {number} props.selectedTimestamp - Currently selected timestamp in seconds
- * @param {number} props.duration - Audio duration in seconds
- * @param {boolean} props.showTimestamps - Whether to show timestamp markers (default: true)
- * @param {boolean} props.showSelectedMarker - Whether to show the selected position marker (default: true)
- */
-const DetailedWaveform = ({ 
+interface DetailedWaveformProps {
+  waveform: number[];
+  playbackPosition: number;
+  onPress: (position: number) => void;
+  onLongPress: (timestamp: number) => void;
+  selectedTimestamp: number | null;
+  duration: number;
+  showTimestamps?: boolean;
+  showSelectedMarker?: boolean;
+}
+
+const DetailedWaveform: React.FC<DetailedWaveformProps> = ({ 
   waveform = [], 
   playbackPosition = 0, 
   onPress, 
@@ -35,8 +34,8 @@ const DetailedWaveform = ({
   showTimestamps = true,
   showSelectedMarker = true,
 }) => {
-  const containerRef = useRef(null);
-  const layoutWidth = useRef(0);
+  const containerRef = useRef<View>(null);
+  const layoutWidth = useRef<number>(0);
 
   // Calculate selected position as a percentage
   const selectedPosition = selectedTimestamp !== null && duration > 0
@@ -69,7 +68,7 @@ const DetailedWaveform = ({
   ).current;
 
   // Handle touch/press on waveform
-  const handleTouch = useCallback((locationX) => {
+  const handleTouch = useCallback((locationX: number) => {
     if (!layoutWidth.current) return;
     
     // Calculate position as percentage
@@ -79,10 +78,10 @@ const DetailedWaveform = ({
     if (onPress) {
       onPress(position);
     }
-  }, [onPress, layoutWidth.current]);
+  }, [onPress]);
 
   // Handle long press on waveform
-  const handleLongPress = useCallback((event) => {
+  const handleLongPress = useCallback((event: GestureResponderEvent) => {
     if (!onLongPress || !layoutWidth.current) return;
     
     // Get touch position and calculate timestamp
@@ -94,10 +93,10 @@ const DetailedWaveform = ({
     
     // Call the provided callback
     onLongPress(timestamp);
-  }, [onLongPress, duration, layoutWidth.current]);
+  }, [onLongPress, duration]);
   
   // Handle layout and store container width
-  const onLayout = useCallback((event) => {
+  const onLayout = useCallback((event: { nativeEvent: { layout: { width: number } } }) => {
     layoutWidth.current = event.nativeEvent.layout.width;
   }, []);
 
@@ -251,15 +250,14 @@ const styles = StyleSheet.create({
   },
   selectedTimestampBubble: {
     position: 'absolute',
-    top: 0,
+    top: -30,
     backgroundColor: '#FF3B30',
-    borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    marginTop: -30,
+    borderRadius: 12,
   },
   selectedTimestampText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -271,13 +269,13 @@ const styles = StyleSheet.create({
   timeMarkerLine: {
     width: 1,
     height: 8,
-    backgroundColor: '#A3A3A3',
+    backgroundColor: '#D1D5DB',
   },
   timeMarkerText: {
-    color: '#A3A3A3',
     fontSize: 10,
+    color: '#6B7280',
     marginTop: 2,
   },
 });
 
-export default React.memo(DetailedWaveform);
+export default DetailedWaveform; 

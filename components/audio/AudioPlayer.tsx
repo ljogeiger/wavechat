@@ -4,23 +4,29 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  ActivityIndicator 
+  ActivityIndicator,
+  ViewStyle
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import WaveformVisualizer from './WaveformVisualizer';
 import { formatTime } from '../../utils/timeUtils';
 import useAudioPlayer from '../../hooks/useAudioPlayer';
 
-/**
- * AudioPlayer component for audio messages
- * 
- * @param {Object} props
- * @param {Object} props.message - Audio message data
- * @param {boolean} props.isUserMessage - Whether the message is from the current user
- * @param {Function} props.onPlaybackComplete - Callback when playback completes
- * @param {Object} props.style - Additional style for the container
- */
-const AudioPlayer = ({ 
+interface AudioMessage {
+  id: string;
+  audioUri: string;
+  audioDuration: number;
+  waveform?: number[];
+}
+
+interface AudioPlayerProps {
+  message: AudioMessage;
+  isUserMessage?: boolean;
+  onPlaybackComplete?: () => void;
+  style?: ViewStyle;
+}
+
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ 
   message, 
   isUserMessage = false,
   onPlaybackComplete,
@@ -148,4 +154,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(AudioPlayer);
+export default React.memo(AudioPlayer); 
